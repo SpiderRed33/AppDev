@@ -1,0 +1,99 @@
+import React, { useState, useEffect } from 'react';
+
+function ExpenseForm({ addExpense }) {
+  const [amount, setAmount] = useState('');
+  const [category, setCategory] = useState('');
+  const [type, setType] = useState('expense'); // 'expense' or 'income'
+  const [date, setDate] = useState('');
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    addExpense({ amount, category, type, date });
+    setAmount('');
+    setCategory('');
+    setType('expense');
+    setDate('');
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input 
+        type="number" 
+        placeholder="Amount" 
+        value={amount} 
+        onChange={(e) => setAmount(e.target.value)} 
+        required 
+      />
+      <input 
+        type="text" 
+        placeholder="Category" 
+        value={category} 
+        onChange={(e) => setCategory(e.target.value)} 
+        required 
+      />
+      <select value={type} onChange={(e) => setType(e.target.value)}>
+        <option value="expense">Expense</option>
+        <option value="income">Income</option>
+      </select>
+      <input 
+        type="date" 
+        value={date} 
+        onChange={(e) => setDate(e.target.value)} 
+        required 
+      />
+      <button type="submit">Add</button>
+    </form>
+  );
+}
+
+function Summary({ expenses }) {
+  const weeklyData = expenses.reduce((acc, { amount, category, type, date }) => {
+    const weekNumber = new Date(date).getWeek(); // Get the week number
+    if (!acc[weekNumber]) acc[weekNumber] = {};
+    if (!acc[weekNumber][category]) acc[weekNumber][category] = { income: 0, expense: 0 };
+    if (type === 'expense') acc[weekNumber][category].expense += parseFloat(amount);
+    else acc[weekNumber][category].income += parseFloat(amount);
+    return acc;
+  }, {});
+
+  return (
+    <div>
+      <h3>Weekly Summary</h3>
+      {Object.keys(weeklyData).map((week) => (
+        <div key={week}>
+          <h4>Week {week}</h4>
+          {Object.entries(weeklyData[week]).map(([category, amounts]) => (
+            <div key={category}>
+              <h5>{category}</h5>
+              <p>Income: ${amounts.income}</p>
+              <p>Expense: ${amounts.expense}</p>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function App() {
+  const [expenses, setExpenses] = useState([]);
+
+  const addExpense = (expense) => {
+    setExpenses([...expenses, expense]);
+  };
+
+  useEffect(() => {
+    // Save to localStorage or AsyncStorage for persistence
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+  }, [expenses]);
+
+  return (
+    <div>
+      <h1>Expense Manager</h1>
+      <ExpenseForm addExpense={addExpense} />
+      <Summary expenses={expenses} />
+    </div>
+  );
+}
+
+export default App;
